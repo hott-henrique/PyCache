@@ -1,28 +1,15 @@
 """ PyCache Client Module. """
 
-import hashlib
 import os
-import pickle
 import shutil
 import typing as t
 
 import pycache.exceptions as exc
+import pycache.standard as std
+from pycache.cache import Cache
 
 
-def hash_identifier(string: t.AnyStr) -> str:
-    """ Hash function to generate valid file/directory names.
-
-    :param string: String to execute hash
-    :type string: AnyStr
-    :return: Hash result.
-    :rtype: str
-    """
-    return str(hashlib.md5(
-        string.encode('utf-8'),
-        usedforsecurity=False
-    ).hexdigest())
-
-class Client():
+class Client:
     """Represent a connection between python and the cache manager.
 
     :param name: Name of client to connect with.
@@ -35,7 +22,7 @@ class Client():
 
         os.makedirs(self.__client_path, exist_ok=True)
 
-    def create_cache(self, cache: t.AnyStr, **kwargs) -> None:
+    def create_cache(self, cache: t.AnyStr, **kwargs) -> Cache:
         """Create an cache to save python objects.
 
         :param cache: The name to identify the cache.
@@ -49,7 +36,7 @@ class Client():
 
         :raises ExistentCacheCreation: When trying to create an already existent cache and the colision method was not defined.
         """
-        hcache = hash_identifier(cache)
+        hcache = std.hash_identifier(cache)
 
         cache_path = os.path.join(self.__client_path, hcache)
 
@@ -63,6 +50,25 @@ class Client():
 
         os.makedirs(cache_path)
 
+        return Cache(self.__name, cache)
+
+    def get_cache(self, cache: t.AnyStr) -> Cache:
+        """Get an already created cache.
+
+        :param cache: The cache.
+        :type cache: AnyStr
+
+        :raises InexistentCacheAccess: When trying to acces an inexistent cache.
+        """
+        hcache = std.hash_identifier(cache)
+
+        cache_path = os.path.join(self.__client_path, hcache)
+
+        if not os.path.isdir(cache_path):
+            raise exc.InexistentCacheAccess(cache, self.__name)
+
+        return Cache(self.__name, cache)
+
     def delete_cache(self, cache: t.AnyStr, **kwargs) -> None:
         """Delete an already created cache.
 
@@ -74,7 +80,7 @@ class Client():
 
         :raises InexistentCacheAccess: When deleting an inexistent cache and `ignore_inexistent` is `False`.
         """
-        hcache = hash_identifier(cache)
+        hcache = std.hash_identifier(cache)
 
         cache_path = os.path.join(self.__client_path, hcache)
 
@@ -84,94 +90,3 @@ class Client():
             raise exc.InexistentCacheAccess(cache, self.__name)
 
         shutil.rmtree(cache_path)
-
-    def save_obj(self, cache: t.AnyStr, obj_identifier: t.AnyStr, obj: t.Any, **kwargs):
-        """Save python object to the cache.
-
-        :param cache: Cache handle to save `obj`.
-        :type cache: AnyStr
-
-        :param obj_identifier: String that will identify `obj`.
-        :type obj_identifier: t.AnyStr
-
-        :param obj: Object to save.
-        :type obj: Any
-
-        :param create_cache: Flag to create cache if it dont exists, defaults to `False`.
-        :type create_cache: bool, optional
-
-        :param overwrite_existent: Flag to overwrite an existent object, defaults to `False`.
-        :type overwrite_existent: bool, optional
-
-        :raises InexistentCacheAccess: If cache do not exists and `create_cache` is `False`.
-        :raises ExistentObjectCreation: When trying to overwrite an object and `overwrite` is `False`.
-        """
-        hcache = hash_identifier(cache)
-
-        if kwargs.get('create_cache', False):
-            self.create_cache(cache, ignore_existent=True)
-
-        cache_path = os.path.join(self.__client_path, hcache)
-
-        if not os.path.exists(cache_path):
-            raise exc.InexistentCacheAccess(cache, self.__name)
-
-        hoid = hash_identifier(obj_identifier)
-
-        obj_path = os.path.join(cache_path, hoid)
-
-        if os.path.exists(obj_path) and not kwargs.get('overwrite_existent', False):
-            raise exc.ExistentObjectCreation(obj_identifier, cache, self.__name)
-
-        with open(obj_path, mode='wb') as file:
-            pickle.dump(obj=obj, file=file)
-
-    def load_obj(self, cache: t.AnyStr, obj_identifier: t.AnyStr, **kwargs) -> t.Any:
-        """Load an object that was saved before.
-
-        :param cache: Cache handle to load the object from.
-        :type cache: AnyStr
-
-        :param obj_identifier: String that identify the object to be loaded.
-        :type obj_identifier: AnyStr
-
-        :param exec: Callable to execute when obj_identifier was not found in cache, defaults to `None`.
-        :type exec: Callable, optional
-
-        :param pos_params: Positional parameters to pass to callable in `exec` argument, defaults to `list()`.
-        :type pos_params: List[Any], optional
-
-        :param key_params: Keyword parameters to pass to callable in `exec` argument, defaults to `dict()`.
-        :type key_params: Dict[Any], optional
-
-        :param save_ret: If `True` the object return will be saved in cache with identified as `obj_identifier` and returned. Otherwise, another atempt to load `obj_identifier` will be executed.
-        :type save_ret: bool, optional
-
-        :raises InexistentCacheAccess: When try to access an inexistent cache.
-        :raises InexistentObjectAccess: When try to load an inexistent object and a method to generate the object was not provided.
-
-        :return: The python object.
-        :rtype: Any
-        """
-        hcache = hash_identifier(cache)
-
-        cache_path = os.path.join(self.__client_path, hcache)
-
-        if not os.path.exists(cache_path):
-            raise exc.InexistentCacheAccess(cache, self.__name)
-
-        hoid = hash_identifier(obj_identifier)
-
-        obj_path = os.path.join(cache_path, hoid)
-
-        if not os.path.exists(obj_path):
-            func = kwargs.get('func', None)
-            if func is not None:
-                ret_object = func(*kwargs.get('pos_params', list()), **kwargs.get('key_params', dict()))
-                if kwargs.get('save_ret', True):
-                    self.save_obj(cache, obj_identifier, ret_object)
-                    return ret_object
-            raise exc.InexistentObjectAccess(obj_identifier, cache, self.__name)
-
-        with open(obj_path, mode='rb') as file:
-            return pickle.load(file=file)
