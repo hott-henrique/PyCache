@@ -10,7 +10,7 @@ class ExistentCacheCreation(Exception):
     """Raised when trying to overwrite an existent cache."""
 
     def __init__(self, *args: object) -> None:
-        super().__init__(f'Trying to create an existent cache.  Cache: {args[0]}. Client: {args[1]}.')
+        super().__init__(f'Trying to create an existent cache. Cache: {args[0]}. Client: {args[1]}.')
 
 class InexistentObjectAccess(Exception):
     """Raised when trying to access an inexistent object."""

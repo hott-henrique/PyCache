@@ -12,7 +12,7 @@ sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 project = 'PyCache'
 copyright = '2022, Henrique'
 author = 'Henrique'
-release = '0.1'
+release = '0.1-beta'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -46,7 +46,7 @@ To create a Client use ``pycache.Client()`` class:
 
 .. code-block:: python
 
-    c = pycache.Client()
+    client = pycache.Client()
 
 .. autofunction:: pycache.Client
 
@@ -55,7 +55,7 @@ Creating Caches
 
 .. code-block:: python
 
-    c.create_cache('C')
+    c = client.create_cache('C')
 
 .. autofunction:: pycache.Client.create_cache
 
@@ -65,13 +65,13 @@ Saving and Loading Python Objects
 .. code-block:: python
 
     l = [ 1, 2, 3, 4, 5 ]
-    c.save_obj('C', 'l', l)
+    c.save_obj('l', l)
 
-.. autofunction:: pycache.Client.save_obj
+.. autofunction:: pycache.Cache.save_obj
 
 .. code-block:: python
 
-    print(c.load_obj('C', 'l'))
+    print(c.load_obj('l'))
     >>> [1, 2, 3, 4, 5]
 
-.. autofunction:: pycache.Client.load_obj
+.. autofunction:: pycache.Cache.load_obj

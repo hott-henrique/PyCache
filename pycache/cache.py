@@ -1,11 +1,12 @@
 """ PyCache Cache Module. """
 
-import pickle
 import os
+import pickle
 import typing as t
 
 import pycache.exceptions as exc
 import pycache.standard as std
+
 
 class Cache:
     """Represent a connection between python and the cache manager.
@@ -43,7 +44,6 @@ class Cache:
         :param overwrite_existent: Flag to overwrite an existent object, defaults to `False`.
         :type overwrite_existent: bool, optional
 
-        :raises InexistentCacheAccess: If cache do not exists and `create_cache` is `False`.
         :raises ExistentObjectCreation: When trying to overwrite an object and `overwrite` is `False`.
         """
         hoid = std.hash_identifier(obj_identifier)
@@ -74,10 +74,9 @@ class Cache:
         :param key_params: Keyword parameters to pass to callable in `exec` argument, defaults to `dict()`.
         :type key_params: Dict[Any], optional
 
-        :param save_ret: If `True` the object return will be saved in cache with identified as `obj_identifier` and returned. Otherwise, another atempt to load `obj_identifier` will be executed.
+        :param save_ret: If `True` the object returned by `exec` will be saved in cache identified as `obj_identifier` and returned. Otherwise, another atempt to load `obj_identifier` will be executed. Defaults to `True`.
         :type save_ret: bool, optional
 
-        :raises InexistentCacheAccess: When try to access an inexistent cache.
         :raises InexistentObjectAccess: When try to load an inexistent object and a method to generate the object was not provided.
 
         :return: The python object.
@@ -99,9 +98,19 @@ class Cache:
         with open(obj_path, mode='rb') as file:
             return pickle.load(file=file)
 
-    def delete_obj(self, obj_identifier: t.AnyStr) -> t.Any:
+    def delete_obj(self, obj_identifier: t.AnyStr) -> None:
+        """Try to delete object in cache.
+
+        :param obj_identifier: Identifier of object to be deleted.
+        :type obj_identifier: AnyStr
+
+        :raises InexistentObjectAccess: When try to delete inexistent object.
+        """
         hoid = std.hash_identifier(obj_identifier)
 
         obj_path = os.path.join(self.__path, hoid)
+
+        if not os.path.exists(obj_path):
+            raise exc.InexistentObjectAccess(obj_identifier, self.__cache, self.__client)
 
         os.remove(obj_path)
