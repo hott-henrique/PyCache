@@ -37,20 +37,17 @@ class Client:
         :raises ExistentCacheCreation: When trying to create an already existent cache and the colision method was not defined.
         """
         hcache = std.hash_identifier(cache)
-
         cache_path = os.path.join(self.__client_path, hcache)
 
         if os.path.isdir(cache_path):
             if kwargs.get('overwrite_existent', False):
                 self.delete_cache(cache)
             elif kwargs.get('ignore_existent', False):
-                return
+                return self.get_cache(cache)
             else:
                 raise exc.ExistentCacheCreation(cache, self.__name)
 
-        os.makedirs(cache_path)
-
-        return Cache(self.__name, cache)
+        return Cache(cache, self.__name, create=True)
 
     def get_cache(self, cache: t.AnyStr) -> Cache:
         """Get an already created cache.
@@ -67,7 +64,7 @@ class Client:
         if not os.path.isdir(cache_path):
             raise exc.InexistentCacheAccess(cache, self.__name)
 
-        return Cache(self.__name, cache)
+        return Cache(cache, self.__name, create=False)
 
     def delete_cache(self, cache: t.AnyStr, **kwargs) -> None:
         """Delete an already created cache.

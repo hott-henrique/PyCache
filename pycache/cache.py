@@ -16,7 +16,7 @@ class Cache:
     :type cache: AnyStr
     """
 
-    def __init__(self, cache: t.AnyStr, client: t.AnyStr = 'PyCache') -> None:
+    def __init__(self, cache: t.AnyStr, client: t.AnyStr = 'PyCache', **kwargs) -> None:
         cache_hash = std.hash_identifier(cache)
 
         self.__client = client
@@ -24,7 +24,8 @@ class Cache:
 
         self.__path = os.path.join(os.path.abspath(client), cache_hash)
 
-        os.makedirs(self.__path, exist_ok=True)
+        if kwargs.get('create', False):
+            os.makedirs(self.__path)
 
     def save_obj(self, obj_identifier: t.AnyStr, obj: t.Any, **kwargs):
         """Save python object to the cache.
