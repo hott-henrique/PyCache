@@ -66,19 +66,7 @@ class Cache:
         :param obj_identifier: String that identify the object to be loaded.
         :type obj_identifier: AnyStr
 
-        :param exec: Callable to execute when obj_identifier was not found in cache, defaults to `None`.
-        :type exec: Callable, optional
-
-        :param pos_params: Positional parameters to pass to callable in `exec` argument, defaults to `list()`.
-        :type pos_params: List[Any], optional
-
-        :param key_params: Keyword parameters to pass to callable in `exec` argument, defaults to `dict()`.
-        :type key_params: Dict[Any], optional
-
-        :param save_ret: If `True` the object returned by `exec` will be saved in cache identified as `obj_identifier` and returned. Otherwise, another atempt to load `obj_identifier` will be executed. Defaults to `True`.
-        :type save_ret: bool, optional
-
-        :raises InexistentObjectAccess: When try to load an inexistent object and a method to generate the object was not provided.
+        :raises InexistentObjectAccess: When try to load an inexistent object.
 
         :return: The python object.
         :rtype: Any
@@ -88,12 +76,6 @@ class Cache:
         obj_path = os.path.join(self.__path, hoid)
 
         if not os.path.exists(obj_path):
-            func = kwargs.get('func', None)
-            if func is not None:
-                ret_object = func(*kwargs.get('pos_params', list()), **kwargs.get('key_params', dict()))
-                if kwargs.get('save_ret', True):
-                    self.save_obj(obj_identifier, ret_object)
-                    return ret_object
             raise exc.InexistentObjectAccess(obj_identifier, self.__cache, self.__client)
 
         with open(obj_path, mode='rb') as file:
